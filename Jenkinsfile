@@ -24,8 +24,8 @@ pipeline {
         stage('Stop and Remove Existing Container') {
             steps {
                 script {
-                    bat 'docker stop demo-container'
-                    bat 'docker rm demo-container'
+                    bat 'docker stop welcome-to-container'
+                    bat 'docker rm welcome-to-container'
                 }
             }
         }
@@ -55,7 +55,7 @@ pipeline {
             }
             steps {
                 script {
-                    docker.image("demo13:${env.BUILD_NUMBER}").run("-d -p 8080:8080 --name demo-container")
+                    docker.image("demo13:${env.BUILD_NUMBER}").run("-d -p 8080:8080 --name welcome-to-containerr")
                 }
             }
         }
