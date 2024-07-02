@@ -55,7 +55,7 @@ pipeline {
             }
             steps {
                 script {
-                    docker.image("demo13:${env.BUILD_NUMBER}").run("-d -p 8080:8080 --name demo-container")
+                    docker.image("demo13:${env.BUILD_NUMBER}").run("-d -p 3030:3030 --name demo-container")
                 }
             }
         }
