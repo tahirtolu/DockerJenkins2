@@ -2,8 +2,13 @@ pipeline {
     agent any
 
     environment {
-        registryCredential = 'dockerhub-credentials' // Docker Hub için kullanıcı kimlik bilgileri
+        registryCredential = 'dockerhub-credentials' // Docker Hub için kimlik bilgisi ID'si
         dockerImage = ''
+    }
+
+    triggers {
+        // Herhangi bir push işlemi olduğunda pipeline tetiklenir
+        githubPush()
     }
 
     stages {
@@ -28,8 +33,8 @@ pipeline {
             steps {
                 script {
                     // Daha önce varsa mevcut konteyneri durdur ve kaldır
-                    sh 'docker stop demo-container || true' // Hata almamak için || true ekleyin
-                    sh 'docker rm demo-container || true' // Hata almamak için || true ekleyin
+                    sh 'docker stop demo-container || true'
+                    sh 'docker rm demo-container || true'
                 }
             }
         }
@@ -49,6 +54,15 @@ pipeline {
                         dockerImage.push("${env.BUILD_NUMBER}")
                         dockerImage.push("latest")
                     }
+                }
+            }
+        }
+
+        stage('Deploy to Server') {
+            steps {
+                script {
+                    // Yeni imajı çalıştır
+                    sh 'docker run -d --name demo-container -p 8080:8080 demo13:${env.BUILD_NUMBER}'
                 }
             }
         }
