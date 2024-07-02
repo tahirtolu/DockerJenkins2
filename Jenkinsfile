@@ -1,41 +1,65 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven'
+
+    environment {
+        registryCredential = 'dockerhub-credentials' // Docker Hub için kullanıcı kimlik bilgileri
+        dockerImage = ''
     }
+
     stages {
-        stage('Build Maven') {
+        stage('Checkout') {
             steps {
-                checkout scmGit(
-                    branches: [[name: '*/master']],
-                    userRemoteConfigs: [[url: 'https://github.com/tahirtolu/DockerJenkins2']]
-                )
-                bat 'mvn clean install'
-            }
-        }
- 	stage('Stop and Remove Existing Container') {
-             steps {
-                 script {
-
-                    bat 'docker stop demo-container '
-                    bat 'docker rm demo-container'
-                 }
-              }
-        }
-        stage('Build docker image'){
-            steps{
-                script{
-                    docker.build("demo13:${env.BUILD_NUMBER}")
+                script {
+                    git branch: 'master', credentialsId: 'your-git-credentials', url: 'https://github.com/tahirtolu/DockerJenkins2.git'
                 }
             }
         }
-        stage('Push image to Hub'){
-            steps{
-                script{
-                    docker.image("demo13:${env.BUILD_NUMBER}").run("-d -p 6530:6530 --name demo-container")
+
+        stage('Build Maven') {
+            tools {
+                maven 'maven' // Jenkins konfigürasyonunda tanımladığınız Maven aracı adı
+            }
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('Stop and Remove Existing Container') {
+            steps {
+                script {
+                    // Daha önce varsa mevcut konteyneri durdur ve kaldır
+                    sh 'docker stop demo-container || true' // Hata almamak için || true ekleyin
+                    sh 'docker rm demo-container || true' // Hata almamak için || true ekleyin
                 }
             }
-  }
-}
+        }
 
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    dockerImage = docker.build("demo13:${env.BUILD_NUMBER}")
+                }
+            }
+        }
+
+        stage('Push Image to Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        dockerImage.push("${env.BUILD_NUMBER}")
+                        dockerImage.push("latest")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
 }
